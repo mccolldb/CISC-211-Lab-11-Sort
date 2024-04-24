@@ -13,8 +13,7 @@
 .type nameStr,%gnu_unique_object
     
 /*** STUDENTS: Change the next line to your name!  **/
-nameStr: .asciz "Inigo Montoya"  
-
+nameStr: .asciz "David McColl"  
 .align   /* realign so that next mem allocations are on word boundaries */
  
 /* initialize a global variable that C can access to print the nameStr */
@@ -71,11 +70,76 @@ NOTE: definitions: "greater than" means most positive number
 .global asmSwap
 .type asmSwap,%function     
 asmSwap:
-
     /* YOUR asmSwap CODE BELOW THIS LINE! VVVVVVVVVVVVVVVVVVVVV  */
+    // uint32 swapped = asmSwap(int32* addr, uint32 signed, uint32 size) 
+    //        R0=0,1,-1                R0           R1=0,1   R2=1,2,4
+    // note: R1,R2 used but not changed  -- R0 is return value .EQU UNSIGNED, 0
+.EQU   SIGNED, 1
+.EQU   BYTES,  1
+.EQU   HALFS,  2
+.EQU   WORDS,  4
+.EQU ZERO_DETECT, -1
 
-
-
+    push {r4-r11,LR} /* save the caller's registers */
+    MOV R6,ZERO_DETECT    // default return value
+check_8bit:
+    CMP R2,BYTES        // check size
+    BNE check_16bit
+    CMP R1,SIGNED        // select signed/unsigned load
+    LDRSBEQ R4,[R0]      // load signed first
+    LDRSBEQ R5,[R0,4]    // load signed second
+    LDRBNE R4,[R0]       // load unsigned first
+    LDRBNE R5,[R0,4]     // load unsigned second
+    CBZ R4,set_swap_return   // check for end-of-list = 0
+    CBZ R5,set_swap_return   // check for end-of-list = 0
+    CMP R4,R5        // check if first > second
+    STRBGT R5,[R0]   // write back in reverse order
+    STRBGT R4,[R0,4]
+    MOVGT R6,1       // mark as swapped
+    MOVLE R6,0       // else not swapped
+    B set_swap_return
+    
+check_16bit:
+    CMP R2,HALFS      // check size
+    BNE check_32bit
+    CMP R1,SIGNED      // select signed/unsigned load
+    LDRSHEQ R4,[R0]    // load signed first
+    LDRSHEQ R5,[R0,4]  // load signed second
+    LDRHNE R4,[R0]     // load unsigned first
+    LDRHNE R5,[R0,4]   // load unsigned second
+    CBZ R4,set_swap_return
+    CBZ R5,set_swap_return
+    CMP R4,R5          // check is first>second
+    STRHGT R5,[R0]     // write back in reverse order
+    STRHGT R4,[R0,4]
+    MOVGT R6,1         // mark as swapped
+    MOVLE R6,0         // or not
+    B set_swap_return
+    
+check_32bit:
+    LDR R4,[R0]
+    LDR R5,[R0,4]
+    CBZ R4,set_swap_return
+    CBZ R5,set_swap_return
+    CMP R1,SIGNED
+    BNE unsigned_compare
+    CMP R4,R5
+    STRGT R5,[R0]
+    STRGT R4,[R0,4]
+    MOVGT R6,1
+    MOVLE R6,0
+    B set_swap_return
+unsigned_compare:
+    CMP R4,R5
+    STRHI R5,[R0]
+    STRHI R4,[R0,4]
+    MOVHI R6,1
+    MOVLS R6,0
+    B set_swap_return
+    
+set_swap_return:
+    MOV R0,R6  // set return value = swapped flag
+    pop  {r4-r11,PC} /* save the caller's registers */
     /* YOUR asmSwap CODE ABOVE THIS LINE! ^^^^^^^^^^^^^^^^^^^^^  */
     
     
@@ -108,14 +172,31 @@ NOTE: definitions: "greater than" means most positive number
 .global asmSort
 .type asmSort,%function
 asmSort:   
-
-    /* Note to Profs: 
-     */
-
     /* YOUR asmSort CODE BELOW THIS LINE! VVVVVVVVVVVVVVVVVVVVV  */
-
-
-
+    // int32 count = asmSort(int32* addr, uint32 signed, uint32 size)
+    //         R0                    R0           R1=0,1   R2=1,2,4
+    push {r4-r11,LR} /* save the caller's registers */
+    MOV R3,R0       // save array base addr
+    MOV R5,0        // init total swap counter
+next_outer:
+    MOV R4,R3       // reset array addr to base addr
+    MOV R6,0        // reset pass swaps
+next_inner:
+    MOV R0,R4        // get addr array[i]
+    BL  asmSwap      // call swap (note: R1, R2 same as passed in)
+    CMP R0,ZERO_DETECT
+    BEQ end_inner
+    ADD R6,R0        // accumulate swaps this pass
+    ADD R4,4         // point addr to next 32bit word
+    B   next_inner
+end_inner:
+    CBZ R6, set_sort_return  // no new swaps -- we are done sorting
+    ADD R5,R6                // accum total swaps
+    b next_outer
+    
+set_sort_return:
+    MOV R0,R5        // set return value = total swaps
+    pop  {r4-r11,PC} /* save the caller's registers */
     /* YOUR asmSort CODE ABOVE THIS LINE! ^^^^^^^^^^^^^^^^^^^^^  */
 
    
