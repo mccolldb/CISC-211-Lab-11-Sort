@@ -35,7 +35,7 @@ extern char * nameStrPtr;
 
 // STUDENTS: Uncomment only ONE of the next two lines
 #define ONLY_PRINT_SWAP_FAILS ((true))
-// #define ONLY_PRINT_SWAP_FAILS ((false))
+//#define ONLY_PRINT_SWAP_FAILS ((false))
 
 // STUDENTS: Uncomment only ONE of the next two lines
 #define ONLY_PRINT_SORT_FAILS ((true))

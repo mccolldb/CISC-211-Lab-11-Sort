@@ -120,7 +120,6 @@ static void usartDmaChannelHandler(DMAC_TRANSFER_EVENT event, uintptr_t contextH
 }
 #endif
 
-
 // *****************************************************************************
 // *****************************************************************************
 // Section: Main Entry Point
@@ -413,6 +412,7 @@ int main ( void )
         LED0_Toggle();
         isRTCExpired = false;
         ++idleCounter;
+        break;
     }
 
     
